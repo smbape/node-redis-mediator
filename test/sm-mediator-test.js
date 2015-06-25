@@ -8,21 +8,28 @@ var assert = require("assert");
 var EventEmitter = require('events').EventEmitter;
 var emitter = new EventEmitter();
 var isReady = false,
-    mediatorCount = 0;
+    mediatorCount = 0,
+    mediatorWaiting = 2;
+
+// Wait for mediators to be ready before starting test
+emitter.once('ready', function() {
+    isReady = true;
+});
 
 var mediator1 = new RedisMediator({
     name: 'mediator1'
 });
 mediator1.once('ready', function() {
-    if (++mediatorCount === 2) {
+    if (++mediatorCount === mediatorWaiting) {
         emitter.emit('ready');
     }
 });
+
 var mediator2 = new RedisMediator({
     name: 'mediator2'
 });
 mediator2.once('ready', function() {
-    if (++mediatorCount === 2) {
+    if (++mediatorCount === mediatorWaiting) {
         emitter.emit('ready');
     }
 });
@@ -46,6 +53,7 @@ describe('Emit', function() {
             }
         });
 
+        // Wait for mediators to be ready before starting test
         if (isReady) {
             mediator1.emit('event', 'arg');
         } else {
@@ -75,7 +83,7 @@ describe('Emit', function() {
 });
 
 describe('Broadcast', function() {
-    it('should broadcast', function(done) {
+    it('should broadcast 1', function(done) {
         var count = 0,
             waiting = 2;
         mediator1.once('event', listener);
@@ -93,7 +101,7 @@ describe('Broadcast', function() {
         }
     });
 
-    it('should broadcast', function(done) {
+    it('should broadcast 2', function(done) {
         var count = 0,
             waiting = 2;
         mediator1.once('event', function(arg) {

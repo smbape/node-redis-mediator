@@ -50,39 +50,48 @@ module.exports = class RedisMediator extends EventEmitter
     init: (@uid, @prefix, @pub, @sub)->
         @_ids = 0
         @acknowledges = {}
-        @key = @prefix + '#' + @uid
+        @messagep = @prefix + '#message#'
+        @pubchannel = @messagep + @uid
+        @ackchannel = @prefix + '#ack#' + @uid
+        count = 0
+        waiting = 2
         
-        @sub.psubscribe @prefix + '#*', (err)=>
+        @sub.psubscribe @messagep + '*', (err)=>
             return EventEmitter::emit.call @, 'error', err if err
-            EventEmitter::emit.call @, 'ready'
+            EventEmitter::emit.call @, 'ready' if ++count is waiting
             return
 
-        @sub.on 'pmessage', @onMessage
+        @sub.psubscribe @ackchannel, (err)=>
+            return EventEmitter::emit.call @, 'error', err if err
+            EventEmitter::emit.call @, 'ready' if ++count is waiting
+            return
+
+        @sub.on 'pmessage', @onmessage
         return
 
-    onMessage: (pattern, channel, msg)=>
-        # logger.trace @name, 'pmessage', channel
-
+    onmessage: (pattern, channel, msg)=>
         info = channel.split '#'
-        if @uid is info[1]
-            # logger.trace @name, 'ignore same uid'
-            return
-        evt = info[2]
+        evt = info[1]
+        uid = info[2]
+        return if evt is 'message' and @uid is uid
+
         [packet, options] = msgpack.decode msg
 
         args = packet.args
 
         if evt is 'ack'
-            # logger.trace @name, 'ack', options.id
+            # Response to a waiting acknowledge
             return if not @acknowledges.hasOwnProperty options.id
             fn = @acknowledges[options.id].fn
             if --@acknowledges[options.id].counter is 0
-                @cleanAck options.id
+                # All waiting responses have been received
+                @clearAck options.id
             fn.apply fn.context, args
             return
         
         if packet.ack
-            args[args.length] = @acknowledge packet.id
+            # Packet is waiting for an acknowledge
+            args[args.length] = @acknowledge packet.id, packet.ack
 
         @_emit args
         return
@@ -108,8 +117,7 @@ module.exports = class RedisMediator extends EventEmitter
     
     broadcast: ->
         encodedPacket = @packet Array::slice.call arguments
-        # logger.trace @name, 'publish', @key + '#message'
-        @pub.publish @key + '#message', encodedPacket
+        @pub.publish @pubchannel, encodedPacket
         return
 
     packet: (args, options)->
@@ -118,41 +126,42 @@ module.exports = class RedisMediator extends EventEmitter
         fn = args[args.length - 1]
         if 'function' is typeof fn
             packet.args = args.slice 0, args.length - 1
-            packet.ack = true
+            packet.ack = @ackchannel
 
             id = packet.id
-            # logger.trace @name, 'wait acknowledge', id
 
             @acknowledges[id] =
                 fn: fn
                 counter: fn.counter or 1
                 context: fn.context or null
             
-            # 10 seconds to acknowledge
+            # wait acknowledges for 2 seconds by default
             @acknowledges[id].timer = setTimeout =>
-                # logger.trace @name, 'timeout', packet.id
-                @cleanAck id
+                @clearAck id
                 if 'function' is typeof fn.timeoutFunc
                     fn.timeoutFunc()
                 return
-            , fn.timeout or 10000
+            , fn.timeout or 2000
 
         msgpack.encode [packet, options]
 
-    cleanAck: (id)->
+    clearAck: (id)->
         return if not @acknowledges.hasOwnProperty id
+
         clearTimeout @acknowledges[id].timer
+
+        # Remove nested references. Don't know if necessary with node 0.8+
         for prop of @acknowledges[id]
             delete @acknowledges[id][prop]
+        
         delete @acknowledges[id]
         return
 
-    acknowledge: (id)=>
+    acknowledge: (id, channel)=>
         =>
             args = Array::slice.call arguments
             packet = {id: ++@_ids, args: args}
             options = id: id
             encodedPacket = msgpack.encode [packet, options]
-            # logger.trace @name, 'publish', @key + '#ack'
-            @pub.publish @key + '#ack', encodedPacket
+            @pub.publish channel, encodedPacket
             return
