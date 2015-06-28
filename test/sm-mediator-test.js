@@ -1,8 +1,5 @@
 var RedisMediator = require('../');
 
-// require('coffee-script').register();
-// var RedisMediator = require('../src/sm-redis-mediator');
-
 var assert = require("assert");
 
 var EventEmitter = require('events').EventEmitter;
@@ -128,6 +125,18 @@ describe('Acknowledge', function() {
             }
         });
         mediator2.emit('event with ack', 'arg', function(arg) {
+            assert.strictEqual(arg, 'acknowledge');
+            done();
+        });
+    });
+
+    it('should acknowledge broadcast', function(done) {
+        mediator1.once('event with ack', function(arg, fn) {
+            if (arg === 'arg') {
+                fn('acknowledge');
+            }
+        });
+        mediator2.broadcast('event with ack', 'arg', function(arg) {
             assert.strictEqual(arg, 'acknowledge');
             done();
         });

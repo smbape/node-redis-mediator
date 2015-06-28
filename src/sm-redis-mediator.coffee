@@ -76,6 +76,7 @@ module.exports = class RedisMediator extends EventEmitter
         return if evt is 'message' and @uid is uid
 
         [packet, options] = msgpack.decode msg
+        # logger.debug 'message', @uid, packet, options
 
         args = packet.args
 
@@ -116,6 +117,7 @@ module.exports = class RedisMediator extends EventEmitter
         return
     
     broadcast: ->
+        # logger.debug 'broadcast', @uid
         encodedPacket = @packet Array::slice.call arguments
         @pub.publish @pubchannel, encodedPacket
         return
@@ -159,6 +161,7 @@ module.exports = class RedisMediator extends EventEmitter
 
     acknowledge: (id, channel)=>
         =>
+            # logger.debug 'acknowledge', @uid
             args = Array::slice.call arguments
             packet = {id: ++@_ids, args: args}
             options = id: id

@@ -2,7 +2,7 @@
   "name": "smRedisMediator",
   "version": "0.0.1",
   "description": "Redis messaging layer",
-  "main": "./lib/sm-redis-mediator.js",
+  "main": "./index.js",
   "dependencies": {
     "msgpack-js": "*",
     "redis": "*",
