@@ -36,6 +36,8 @@ describe('Emit', function() {
         var count = 0,
             waiting = 2;
 
+        this.timeout = 3000;
+
         mediator1.once('event', function(arg) {
             assert.strictEqual(arg, 'arg');
             if (++count === waiting) {
@@ -118,7 +120,7 @@ describe('Broadcast', function() {
 });
 
 describe('Acknowledge', function() {
-    it('should acknowledge', function(done) {
+    it('should acknowledge emit', function(done) {
         mediator1.once('event with ack', function(arg, fn) {
             if (arg === 'arg') {
                 fn('acknowledge');

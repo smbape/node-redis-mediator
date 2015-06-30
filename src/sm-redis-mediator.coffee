@@ -15,44 +15,37 @@ logger = log4js.getLogger 'RedisMediator'
 
 module.exports = class RedisMediator extends EventEmitter
     constructor: (uri, opts) ->
-        opts = opts or {}
-
-        # handle options only
-        if 'object' == typeof uri
+        if arguments.length is 1 and uri isnt null and 'object' is typeof uri
             opts = uri
             uri = null
 
-        # handle uri string
-        if uri
+        opts or (opts = {})
+
+        if 'string' is typeof uri
             uri = uri.split ':'
             opts.host = uri[0]
             opts.port = uri[1]
 
-        # opts
+        @pub = opts.pub
+        @sub = opts.sub
+        @channel = opts.channel or 'mediator'
+        @name = opts.name
+
         socket = opts.socket
         host = opts.host or '127.0.0.1'
         port = if opts.port then parseInt(opts.port, 10) else 6379
-        pub = opts.pub
-        sub = opts.sub
-        prefix = opts.key or 'RedisMediator'
-        @name = opts.name
+        if not @pub
+            @pub = if socket then redis.createClient(socket) else redis.createClient(port, host)
+        if not @sub
+            @sub = if socket then redis.createClient(socket, detect_buffers: true) else redis.createClient(port, host, detect_buffers: true)
 
-        # init clients if needed
-        if not pub
-            pub = if socket then redis.createClient(socket) else redis.createClient(port, host)
-        if not sub
-            sub = if socket then redis.createClient(socket, detect_buffers: true) else redis.createClient(port, host, detect_buffers: true)
-
-        # this mediator's key
-        uid = uid2(6)
-        @init uid, prefix, pub, sub
-    
-    init: (@uid, @prefix, @pub, @sub)->
+        @uid = uid2 6
         @_ids = 0
         @acknowledges = {}
-        @messagep = @prefix + '#message#'
+        @messagep = @channel + '#message#'
         @pubchannel = @messagep + @uid
-        @ackchannel = @prefix + '#ack#' + @uid
+        @ackchannel = @channel + '#ack#' + @uid
+
         count = 0
         waiting = 2
         
@@ -67,7 +60,6 @@ module.exports = class RedisMediator extends EventEmitter
             return
 
         @sub.on 'pmessage', @onmessage
-        return
 
     onmessage: (pattern, channel, msg)=>
         info = channel.split '#'
@@ -140,8 +132,8 @@ module.exports = class RedisMediator extends EventEmitter
             # wait acknowledges for 2 seconds by default
             @acknowledges[id].timer = setTimeout =>
                 @clearAck id
-                if 'function' is typeof fn.timeoutFunc
-                    fn.timeoutFunc()
+                if 'function' is typeof fn.timeoutFn
+                    fn.timeoutFn()
                 return
             , fn.timeout or 2000
 
