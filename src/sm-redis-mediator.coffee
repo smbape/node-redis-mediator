@@ -29,7 +29,6 @@ module.exports = class RedisMediator extends EventEmitter
         @pub = opts.pub
         @sub = opts.sub
         @channel = opts.channel or 'mediator'
-        @name = opts.name
 
         socket = opts.socket
         host = opts.host or '127.0.0.1'
