@@ -1,12 +1,16 @@
 {
-  "name": "smRedisMediator",
+  "name": "sm-redis-mediator",
   "version": "0.0.1",
   "description": "Redis messaging layer",
   "main": "./index.js",
+  "scripts": {
+    "test": "mocha ./test/sm-redis-mediator-test.js"
+  },
   "dependencies": {
-    "msgpack-js": "*",
-    "redis": "*",
-    "uid2": "*"
+    "log4js": "^0.6.26",
+    "msgpack-js": "^0.3.0",
+    "redis": "^0.12.1",
+    "uid2": "0.0.3"
   },
   "devDependencies": {
     "mocha": "^2.2.5"
