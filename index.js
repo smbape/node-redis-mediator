@@ -1,1 +1,1 @@
-module.exports = require('./lib/sm-redis-mediator');
+module.exports = require('./lib/redis-mediator');

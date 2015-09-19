@@ -4,7 +4,7 @@ sm-redis-mediator
 Message layer using redis
 
 ```javascript
-var RedisMediator = require('sm-redis-mediator');
+var RedisMediator = require('redis-mediator');
 
 var assert = require("assert");
 
