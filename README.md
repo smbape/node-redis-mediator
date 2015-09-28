@@ -1,4 +1,4 @@
-sm-redis-mediator
+redis-mediator
 =======
 
 Message layer using redis
