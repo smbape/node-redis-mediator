@@ -34,9 +34,15 @@ module.exports = class RedisMediator extends EventEmitter
         host = opts.host or '127.0.0.1'
         port = if opts.port then parseInt(opts.port, 10) else 6379
         if not @pub
-            @pub = if socket then redis.createClient(socket) else redis.createClient(port, host)
+            if socket
+                @pub = redis.createClient(socket)
+            else
+                @pub = redis.createClient(port, host)
         if not @sub
-            @sub = if socket then redis.createClient(socket, detect_buffers: true) else redis.createClient(port, host, detect_buffers: true)
+            if socket
+                @sub = redis.createClient(socket, return_buffers: true)
+            else
+                @sub = redis.createClient(port, host, return_buffers: true)
 
         @uid = uid2 6
         @_ids = 0
@@ -61,7 +67,7 @@ module.exports = class RedisMediator extends EventEmitter
         @sub.on 'pmessage', @onmessage
 
     onmessage: (pattern, channel, msg)=>
-        info = channel.split '#'
+        info = channel.toString().split '#'
         evt = info[1]
         uid = info[2]
         return if evt is 'message' and @uid is uid

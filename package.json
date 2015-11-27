@@ -4,11 +4,11 @@
   "description": "Redis as a message layer between machines and processes",
   "main": "index.js",
   "directories": {
-    "prepublish": "coffee -bo lib/ src/",
-    "postinstall": "node -e \"require('fs').readdir('lib',function(e){e&&require('child_process').exec('npm run prepublish')})\"",
     "test": "test"
   },
   "scripts": {
+    "prepublish": "coffee -bo lib/ src/",
+    "postinstall": "node -e \"require('fs').readdir('lib',function(e){e&&require('child_process').exec('npm run prepublish')})\"",
     "test": "mocha ./test/test.js"
   },
   "repository": {
@@ -28,10 +28,11 @@
   "dependencies": {
     "log4js": "^0.6.26",
     "msgpack-js": "^0.3.0",
-    "redis": "^0.12.1",
+    "redis": "^2.4.1",
     "uid2": "0.0.3"
   },
   "devDependencies": {
+    "coffee-script": "^1.10.0",
     "mocha": "^2.2.5"
   }
 }
