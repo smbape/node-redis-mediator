@@ -1,6 +1,6 @@
 {
   "name": "redis-mediator",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Redis as a message layer between machines and processes",
   "main": "index.js",
   "directories": {
