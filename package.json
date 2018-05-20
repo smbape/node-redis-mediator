@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "prepublish": "node scripts/prepublish.js --no-header -bo lib/ src/",
+    "prepublishOnly": "node scripts/prepublish.js --no-header -bo lib/ src/",
     "test": "mocha ./test/test.js"
   },
   "repository": {
@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/smbape/node-redis-mediator",
   "dependencies": {
-    "log4js": "^0.6.26",
     "msgpack-js": "^0.3.0",
     "redis": "^2.4.1",
     "rimraf": "^2.6.1",
@@ -33,6 +32,6 @@
   },
   "devDependencies": {
     "coffee-script": "^1.10.0",
-    "mocha": "^2.2.5"
+    "mocha": "^5.2.0"
   }
 }

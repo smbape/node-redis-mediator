@@ -7,7 +7,7 @@ redis = require 'redis'
 msgpack = require 'msgpack-js'
 EventEmitter = require('events').EventEmitter
 log4js = global.log4js or (global.log4js = require 'log4js')
-logger = log4js.getLogger 'RedisMediator'
+# logger = log4js.getLogger 'RedisMediator'
 
 ###*
 # Module exports.
