@@ -6,7 +6,7 @@ uid2 = require 'uid2'
 redis = require 'redis'
 msgpack = require 'msgpack-js'
 EventEmitter = require('events').EventEmitter
-log4js = global.log4js or (global.log4js = require 'log4js')
+# log4js = global.log4js or (global.log4js = require 'log4js')
 # logger = log4js.getLogger 'RedisMediator'
 
 ###*
@@ -33,16 +33,20 @@ module.exports = class RedisMediator extends EventEmitter
         socket = opts.socket
         host = opts.host or '127.0.0.1'
         port = if opts.port then parseInt(opts.port, 10) else 6379
+
         if not @pub
             if socket
                 @pub = redis.createClient(socket)
             else
                 @pub = redis.createClient(port, host)
+            @pub.___RedisMediator___  = 1
+
         if not @sub
             if socket
                 @sub = redis.createClient(socket, return_buffers: true)
             else
                 @sub = redis.createClient(port, host, return_buffers: true)
+            @sub.___RedisMediator___  = 1
 
         @uid = uid2 6
         @_ids = 0
@@ -53,7 +57,7 @@ module.exports = class RedisMediator extends EventEmitter
 
         count = 0
         waiting = 2
-        
+
         @sub.psubscribe @messagep + '*', (err)=>
             return EventEmitter::emit.call @, 'error', err if err
             EventEmitter::emit.call @, 'ready' if ++count is waiting
@@ -159,9 +163,21 @@ module.exports = class RedisMediator extends EventEmitter
     acknowledge: (id, channel)=>
         =>
             # logger.debug 'acknowledge', @uid
+            return if @destroyed
             args = Array::slice.call arguments
             packet = {id: ++@_ids, args: args}
             options = id: id
             encodedPacket = msgpack.encode [packet, options]
             @pub.publish channel, encodedPacket
             return
+
+    destroy: ->
+        @sub.punsubscribe @messagep + '*', 0
+        @sub.punsubscribe @ackchannel, 0
+
+        if @pub.___RedisMediator___
+            @pub.quit()
+        if @sub.___RedisMediator___
+            @sub.quit()
+
+        return

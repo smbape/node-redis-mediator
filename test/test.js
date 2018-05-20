@@ -3,32 +3,44 @@ var RedisMediator = require('../');
 var assert = require("assert");
 
 var EventEmitter = require('events').EventEmitter;
-var emitter = new EventEmitter();
+
 var isReady = false,
     mediatorCount = 0,
     mediatorWaiting = 2;
 
-// Wait for mediators to be ready before starting test
-emitter.once('ready', function() {
-    isReady = true;
+var emitter, mediator1, mediator2;
+
+before(function() {
+
+    emitter = new EventEmitter();
+
+    // Wait for mediators to be ready before starting test
+    emitter.once('ready', function() {
+        isReady = true;
+    });
+
+    mediator1 = new RedisMediator({
+        name: 'mediator1'
+    });
+    mediator1.once('ready', function() {
+        if (++mediatorCount === mediatorWaiting) {
+            emitter.emit('ready');
+        }
+    });
+
+    mediator2 = new RedisMediator({
+        name: 'mediator2'
+    });
+    mediator2.once('ready', function() {
+        if (++mediatorCount === mediatorWaiting) {
+            emitter.emit('ready');
+        }
+    });
 });
 
-var mediator1 = new RedisMediator({
-    name: 'mediator1'
-});
-mediator1.once('ready', function() {
-    if (++mediatorCount === mediatorWaiting) {
-        emitter.emit('ready');
-    }
-});
-
-var mediator2 = new RedisMediator({
-    name: 'mediator2'
-});
-mediator2.once('ready', function() {
-    if (++mediatorCount === mediatorWaiting) {
-        emitter.emit('ready');
-    }
+after(function() {
+    mediator1.destroy();
+    mediator2.destroy();
 });
 
 describe('Emit', function() {
